@@ -1,6 +1,19 @@
-import { getShareWithVideo, incrementShareView } from "@/lib/data";
+import { getShareWithVideo, incrementShareView, recordShareView } from "@/lib/data";
 import { getVideoSignedUrl } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
+
+// Hash IP for privacy-preserving tracking
+function hashIp(ip: string): string {
+  return createHash("sha256").update(ip + process.env.IP_HASH_SALT || "squidvault").digest("hex").slice(0, 16);
+}
+
+// Get client IP from request
+function getClientIp(request: NextRequest): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  return forwarded?.split(",")[0]?.trim() || realIp || "unknown";
+}
 
 // Get streaming URL for shared video
 export async function GET(
@@ -42,6 +55,18 @@ export async function GET(
         { status: 410 }
       );
     }
+
+    // Record detailed view event for audit trail
+    const clientIp = getClientIp(request);
+    const userAgent = request.headers.get("user-agent") || undefined;
+    
+    await recordShareView({
+      shareId: token,
+      videoId: video.id,
+      ipHash: hashIp(clientIp),
+      userAgent: userAgent?.slice(0, 500), // Limit length
+      // watchDuration and completed will be updated via a separate endpoint if we track playback
+    });
 
     // Generate signed URL for video access (15 minute expiry)
     const signedUrl = await getVideoSignedUrl(video.storagePath, 15 * 60);

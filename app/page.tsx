@@ -58,20 +58,21 @@ export default async function Home() {
                 </div>
               </ScrollReveal>
 
-              <ScrollReveal delay={100}>
+              <ScrollReveal delay={200}>
                 <h1 className="text-display text-foreground leading-[0.88]">
-                  Your videos.
+                  Secure video
                   <br />
-                  <span className="text-ochre">Encrypted.</span>{" "}
-                  <span className="italic text-foreground">Safe.</span>
+                  <span className="text-ochre">supervision.</span>{" "}
+                  <span className="italic text-foreground">Simplified.</span>
                 </h1>
               </ScrollReveal>
 
-              <ScrollReveal delay={200}>
+              <ScrollReveal delay={300}>
                 <p className="mt-6 max-w-md text-body-lg text-muted leading-relaxed">
-                  The only video vault where encryption happens in your browser.
-                  We never see your videos. We never see your keys.
-                  100% zero-knowledge privacy.
+                  The only video platform designed for therapists. 
+                  Share session recordings with supervisors. 
+                  Get instant view receipts for compliance documentation.
+                  Zero-knowledge encryption — we never see your content.
                 </p>
               </ScrollReveal>
 
@@ -118,14 +119,15 @@ export default async function Home() {
             <div className="mb-16 text-center">
               <div className="mb-5 flex items-center justify-center gap-3">
                 <span className="h-px w-12 bg-ochre/40" />
-                <span className="text-micro text-ochre">The Process</span>
+                <span className="text-micro text-ochre">Built for Supervision</span>
                 <span className="h-px w-12 bg-ochre/40" />
               </div>
               <h2 className="text-headline text-foreground mb-4">
-                Encryption that actually works
+                HIPAA-aligned video sharing
               </h2>
               <p className="text-body-lg text-muted max-w-lg mx-auto leading-relaxed">
-                Most &quot;secure&quot; platforms can still access your content. We literally cannot.
+                Meet supervision requirements with built-in audit trails. 
+                Know exactly when your supervisor reviewed your sessions.
               </p>
             </div>
           </ScrollReveal>
@@ -167,24 +169,24 @@ export default async function Home() {
                 <blockquote className="font-display text-2xl lg:text-3xl text-foreground leading-tight tracking-tight mb-8">
                   Your encryption key never leaves your device.
                   <br />
-                  <span className="text-muted">We literally cannot access your videos.</span>
+                  <span className="text-muted">We cannot access your session recordings.</span>
                 </blockquote>
                 
                 {/* Trust stats row */}
                 <div className="flex flex-wrap items-center justify-center gap-8 lg:gap-12">
                   <div className="text-center">
+                    <div className="text-2xl font-display font-semibold text-ochre mb-1">HIPAA</div>
+                    <div className="text-micro text-muted">Aligned architecture</div>
+                  </div>
+                  <div className="hidden sm:block w-px h-8 bg-border" />
+                  <div className="text-center">
+                    <div className="text-2xl font-display font-semibold text-ochre mb-1">View</div>
+                    <div className="text-micro text-muted">Receipts for audits</div>
+                  </div>
+                  <div className="hidden sm:block w-px h-8 bg-border" />
+                  <div className="text-center">
                     <div className="text-2xl font-display font-semibold text-ochre mb-1">AES-256</div>
                     <div className="text-micro text-muted">Military-grade encryption</div>
-                  </div>
-                  <div className="hidden sm:block w-px h-8 bg-border" />
-                  <div className="text-center">
-                    <div className="text-2xl font-display font-semibold text-ochre mb-1">Zero</div>
-                    <div className="text-micro text-muted">Knowledge architecture</div>
-                  </div>
-                  <div className="hidden sm:block w-px h-8 bg-border" />
-                  <div className="text-center">
-                    <div className="text-2xl font-display font-semibold text-ochre mb-1">100%</div>
-                    <div className="text-micro text-muted">Open source client</div>
                   </div>
                 </div>
               </div>
@@ -227,11 +229,12 @@ export default async function Home() {
             </div>
             
             <h2 className="font-display text-headline text-foreground mb-5 tracking-tight">
-              Ready for true video privacy?
+              Ready to streamline your supervision?
             </h2>
             
             <p className="text-body-lg text-muted mb-12 max-w-lg mx-auto leading-relaxed">
-              Create your encrypted vault in seconds. Your videos stay yours—always.
+              Join therapists who trust SquidVault for secure session sharing. 
+              Get view receipts. Stay compliant.
             </p>
             
             <div className="flex flex-wrap items-center justify-center gap-4">
@@ -252,10 +255,10 @@ export default async function Home() {
               </Link>
               
               <Link
-                href="/sign-in"
+                href={session ? "/dashboard" : "/sign-in"}
                 className="group inline-flex h-12 items-center justify-center gap-2.5 border border-border bg-background/50 px-8 text-xs font-semibold tracking-wide text-foreground transition-all duration-300 hover:border-ochre/30 hover:bg-background"
               >
-                <span>Sign In</span>
+                <span>{session ? "Open Your Vault" : "Sign In"}</span>
                 <svg 
                   className="h-3.5 w-3.5 text-muted transition-all duration-300 group-hover:text-foreground" 
                   fill="none" 

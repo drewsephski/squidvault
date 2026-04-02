@@ -2,8 +2,16 @@
 
 import { useState, useCallback } from "react";
 import { encryptFile, createEncryptedThumbnail } from "@/lib/encryption";
+import Link from "next/link";
 
-export function VideoUpload() {
+interface VideoUploadProps {
+  currentVideos: number;
+  videoLimit: number;
+  remaining: number | null;
+  tier: string;
+}
+
+export function VideoUpload({ currentVideos, videoLimit, remaining, tier }: VideoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [dragActive, setDragActive] = useState(false);
@@ -66,6 +74,9 @@ export function VideoUpload() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: "Upload failed" }));
+        if (response.status === 403 && errorData.limit) {
+          throw new Error(`Video limit reached: ${errorData.current}/${errorData.limit}. Please upgrade your plan.`);
+        }
         throw new Error(errorData.error || `Upload failed: ${response.status}`);
       }
 
@@ -74,7 +85,8 @@ export function VideoUpload() {
       window.location.reload();
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Failed to upload video. Please try again.");
+      const message = error instanceof Error ? error.message : "Failed to upload video";
+      alert(message);
     } finally {
       setIsUploading(false);
     }
@@ -171,6 +183,31 @@ export function VideoUpload() {
               style={{ width: `${uploadProgress}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Plan Limit Indicator */}
+      {remaining !== null && (
+        <div className={`mt-4 p-3 border ${remaining === 0 ? 'border-error/30 bg-error/5' : 'border-ochre/20 bg-ochre/5'}`}>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted">Plan Usage</span>
+            <span className={`text-xs font-medium ${remaining === 0 ? 'text-error' : 'text-ochre'}`}>
+              {currentVideos} / {videoLimit} videos
+            </span>
+          </div>
+          {remaining === 0 ? (
+            <div className="mt-2">
+              <p className="text-xs text-error mb-2">Video limit reached. Upgrade to upload more.</p>
+              <Link 
+                href="/#pricing" 
+                className="text-xs font-semibold text-ochre hover:text-ochre-dark underline"
+              >
+                Upgrade Plan →
+              </Link>
+            </div>
+          ) : remaining !== null && remaining <= 2 && (
+            <p className="text-xs text-warm-gray mt-1">{remaining} {remaining === 1 ? 'video' : 'videos'} remaining</p>
+          )}
         </div>
       )}
 

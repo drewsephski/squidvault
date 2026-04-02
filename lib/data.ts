@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { projects, deployments, activityLogs, apiMetrics, videos, videoAccessLogs, videoShares, purchases, type NewProject, type NewDeployment, type NewActivityLog, type NewVideo, type NewVideoAccessLog, type NewVideoShare, type NewPurchase } from "./schema";
+import { projects, deployments, activityLogs, apiMetrics, videos, videoAccessLogs, videoShares, purchases, shareViewEvents, type NewProject, type NewDeployment, type NewActivityLog, type NewVideo, type NewVideoAccessLog, type NewVideoShare, type NewPurchase, type NewShareViewEvent } from "./schema";
 import { eq, and, desc, sql, gte, lt } from "drizzle-orm";
 import { generateId } from "./utils";
 
@@ -115,7 +115,49 @@ export async function createActivityLog(data: Omit<NewActivityLog, "id" | "creat
   return log;
 }
 
-// Deployments
+// Plan limits configuration
+export const PLAN_LIMITS = {
+  starter: { videoLimit: 3, name: "Starter" },
+  professional: { videoLimit: Infinity, name: "Professional" },
+  practice: { videoLimit: Infinity, name: "Practice" },
+} as const;
+
+export type PlanTier = "starter" | "professional" | "practice";
+
+export async function getUserVideoCount(userId: string): Promise<number> {
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(videos)
+    .where(eq(videos.userId, userId));
+
+  return result?.count ?? 0;
+}
+
+export async function canUserUploadVideo(userId: string): Promise<{ allowed: boolean; current: number; limit: number; tier: PlanTier }> {
+  const tier = await getUserActivePlan(userId);
+  const videoCount = await getUserVideoCount(userId);
+  const limit = PLAN_LIMITS[tier].videoLimit;
+
+  return {
+    allowed: limit === Infinity || videoCount < limit,
+    current: videoCount,
+    limit,
+    tier,
+  };
+}
+
+export async function getUserPlanLimits(userId: string): Promise<{ tier: PlanTier; videoLimit: number; currentVideos: number; remaining: number | null }> {
+  const tier = await getUserActivePlan(userId);
+  const videoCount = await getUserVideoCount(userId);
+  const limit = PLAN_LIMITS[tier].videoLimit;
+
+  return {
+    tier,
+    videoLimit: limit,
+    currentVideos: videoCount,
+    remaining: limit === Infinity ? null : Math.max(0, limit - videoCount),
+  };
+}
 
 export async function createDeployment(data: Omit<NewDeployment, "id" | "createdAt">) {
   const id = generateId();
@@ -487,7 +529,7 @@ export async function getUserPurchases(userId: string) {
     .orderBy(desc(purchases.createdAt));
 }
 
-export async function getUserActivePlan(userId: string): Promise<"starter" | "vault" | "fortress"> {
+export async function getUserActivePlan(userId: string): Promise<"starter" | "professional" | "practice"> {
   const [latestPurchase] = await db
     .select({ tierId: purchases.tierId })
     .from(purchases)
@@ -498,7 +540,70 @@ export async function getUserActivePlan(userId: string): Promise<"starter" | "va
   if (!latestPurchase) return "starter";
 
   const tier = latestPurchase.tierId;
-  if (tier === "fortress") return "fortress";
-  if (tier === "vault") return "vault";
+  if (tier === "practice") return "practice";
+  if (tier === "professional") return "professional";
+  if (tier === "fortress") return "practice"; // Legacy: map old Fortress to Practice
+  if (tier === "vault") return "professional"; // Legacy: map old Vault to Professional
   return "starter";
+}
+
+// Share View Events - for detailed view receipts
+
+export async function recordShareView(data: Omit<NewShareViewEvent, "id" | "createdAt">) {
+  const id = generateId();
+  const now = new Date();
+
+  const [event] = await db.insert(shareViewEvents).values({
+    ...data,
+    id,
+    createdAt: now,
+  }).returning();
+
+  return event;
+}
+
+export async function getShareViewEvents(shareId: string, userId: string, limit = 50) {
+  // First verify the share belongs to a video owned by this user
+  const share = await db
+    .select({ videoId: videoShares.videoId })
+    .from(videoShares)
+    .where(eq(videoShares.id, shareId))
+    .limit(1);
+
+  if (!share[0]) return [];
+
+  // Verify video ownership
+  const video = await getVideoById(share[0].videoId, userId);
+  if (!video) return [];
+
+  return db
+    .select()
+    .from(shareViewEvents)
+    .where(eq(shareViewEvents.shareId, shareId))
+    .orderBy(desc(shareViewEvents.createdAt))
+    .limit(limit);
+}
+
+export async function getVideoShareViewSummary(videoId: string, userId: string) {
+  // Verify ownership
+  const video = await getVideoById(videoId, userId);
+  if (!video) return null;
+
+  // Get all shares for this video with their view counts
+  const shares = await db
+    .select({
+      shareId: videoShares.id,
+      shareCreatedAt: videoShares.createdAt,
+      maxViews: videoShares.maxViews,
+      isRevoked: videoShares.isRevoked,
+      viewCount: sql<number>`count(${shareViewEvents.id})`,
+      lastViewedAt: sql<number | null>`max(${shareViewEvents.createdAt})`,
+    })
+    .from(videoShares)
+    .leftJoin(shareViewEvents, eq(videoShares.id, shareViewEvents.shareId))
+    .where(eq(videoShares.videoId, videoId))
+    .groupBy(videoShares.id)
+    .orderBy(desc(videoShares.createdAt));
+
+  return shares;
 }

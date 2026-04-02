@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { getUserVideos } from "@/lib/data";
+import { getUserVideos, getUserPlanLimits } from "@/lib/data";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { VideoUpload } from "./video-upload";
@@ -18,15 +18,21 @@ export default async function DashboardPage() {
 
   const user = session.user;
   const videos = await getUserVideos(user.id);
+  const planLimits = await getUserPlanLimits(user.id);
 
   const totalSize = videos.reduce((sum, v) => sum + v.originalSize, 0);
   const totalViews = videos.reduce((sum, v) => sum + v.viewCount, 0);
+
+  // Calculate video stat detail based on plan
+  const videoDetail = planLimits.remaining !== null
+    ? `${planLimits.remaining} remaining`
+    : (videos.length > 0 ? "Unlimited" : "Empty");
 
   const statsDisplay = [
     {
       label: "Videos",
       value: videos.length.toString(),
-      detail: videos.length > 0 ? "In vault" : "Empty",
+      detail: videoDetail,
       icon: (
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
@@ -148,7 +154,12 @@ export default async function DashboardPage() {
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-5">
               <ScrollReveal delay={100}>
-                <VideoUpload />
+                <VideoUpload 
+                  currentVideos={planLimits.currentVideos} 
+                  videoLimit={planLimits.videoLimit} 
+                  remaining={planLimits.remaining}
+                  tier={planLimits.tier}
+                />
               </ScrollReveal>
 
               {/* Security Info */}

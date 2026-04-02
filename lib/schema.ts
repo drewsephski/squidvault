@@ -156,15 +156,43 @@ export const purchases = sqliteTable("purchases", {
   statusIdx: index("purchases_status_idx").on(table.status),
 }));
 
-export const videoSharesRelations = relations(videoShares, ({ one }) => ({
-  video: one(videos, {
-    fields: [videoShares.videoId],
-    references: [videos.id],
-  }),
+// Share view events for detailed view receipts
+export const shareViewEvents = sqliteTable("share_view_events", {
+  id: text("id").primaryKey(),
+  shareId: text("share_id").notNull(),
+  videoId: text("video_id").notNull(),
+  ipHash: text("ip_hash"), // Hashed for privacy, still useful for audit
+  userAgent: text("user_agent"),
+  watchDuration: integer("watch_duration"), // seconds watched (if trackable)
+  completed: integer("completed", { mode: "boolean" }).notNull().default(false), // watched to end
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+  shareIdIdx: index("share_view_events_share_id_idx").on(table.shareId),
+  videoIdIdx: index("share_view_events_video_id_idx").on(table.videoId),
+  createdAtIdx: index("share_view_events_created_at_idx").on(table.createdAt),
 }));
 
 export const purchasesRelations = relations(purchases, ({ one }) => ({
   // No explicit relation since users table is managed by Better Auth
+}));
+
+export const shareViewEventsRelations = relations(shareViewEvents, ({ one }) => ({
+  share: one(videoShares, {
+    fields: [shareViewEvents.shareId],
+    references: [videoShares.id],
+  }),
+  video: one(videos, {
+    fields: [shareViewEvents.videoId],
+    references: [videos.id],
+  }),
+}));
+
+export const videoSharesRelations = relations(videoShares, ({ one, many }) => ({
+  video: one(videos, {
+    fields: [videoShares.videoId],
+    references: [videos.id],
+  }),
+  viewEvents: many(shareViewEvents),
 }));
 
 export type Project = typeof projects.$inferSelect;
@@ -181,5 +209,5 @@ export type VideoAccessLog = typeof videoAccessLogs.$inferSelect;
 export type NewVideoAccessLog = typeof videoAccessLogs.$inferInsert;
 export type VideoShare = typeof videoShares.$inferSelect;
 export type NewVideoShare = typeof videoShares.$inferInsert;
-export type Purchase = typeof purchases.$inferSelect;
-export type NewPurchase = typeof purchases.$inferInsert;
+export type ShareViewEvent = typeof shareViewEvents.$inferSelect;
+export type NewShareViewEvent = typeof shareViewEvents.$inferInsert;

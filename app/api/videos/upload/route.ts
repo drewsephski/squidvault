@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { createVideo } from "@/lib/data";
+import { createVideo, canUserUploadVideo } from "@/lib/data";
 import { uploadVideo, generateStorageKey } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
@@ -16,7 +16,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Parse multipart form data
+    // Check user's video limit based on their plan
+    const uploadCheck = await canUserUploadVideo(session.user.id);
+    if (!uploadCheck.allowed) {
+      return NextResponse.json(
+        { 
+          error: `Video limit reached. Your ${uploadCheck.tier} plan allows ${uploadCheck.limit} videos. Please upgrade to upload more.`,
+          limit: uploadCheck.limit,
+          current: uploadCheck.current,
+          tier: uploadCheck.tier,
+        },
+        { status: 403 }
+      );
+    }
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const name = formData.get("name") as string;

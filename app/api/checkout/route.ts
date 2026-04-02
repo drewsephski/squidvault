@@ -49,7 +49,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      mode: "payment",
+      mode: "subscription",
       success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}&tier=${tierId}`,
       cancel_url: `${origin}/payment/cancel`,
       metadata: {

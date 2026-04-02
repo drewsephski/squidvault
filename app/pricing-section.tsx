@@ -25,55 +25,54 @@ const tiers: PricingTier[] = [
     price: 0,
     priceLabel: "Free",
     description: "Try zero-knowledge encryption",
-    storage: "5 GB",
-    videoLimit: "Up to 10 videos",
+    storage: "2 GB",
+    videoLimit: "Up to 3 videos",
     features: [
       "AES-256 encryption",
       "Secure sharing links",
       "7-day link expiry",
       "Web player",
-      "Email support",
     ],
     cta: "Create Free Vault",
     priceId: null,
   },
   {
-    id: "vault",
-    name: "Vault",
-    price: 9,
-    priceLabel: "$9",
-    description: "For personal privacy",
+    id: "professional",
+    name: "Professional",
+    price: 12,
+    priceLabel: "$12",
+    description: "For therapists & supervisors",
     storage: "100 GB",
     videoLimit: "Unlimited videos",
     features: [
       "Everything in Starter",
+      "View receipts & audit logs",
       "Custom link expiry",
       "Download original files",
-      "Priority encryption",
       "Priority support",
     ],
-    cta: "Get Vault",
-    priceId: "price_1THl13Iv4Ez9jUN2JdBCGoRm",
+    cta: "Get Professional",
+    priceId: "price_1THnbPIv4Ez9jUN2AhoeSnhx", // $12/month Professional
     popular: true,
   },
   {
-    id: "fortress",
-    name: "Fortress",
-    price: 29,
-    priceLabel: "$29",
-    description: "For creators & professionals",
-    storage: "1 TB",
+    id: "practice",
+    name: "Practice",
+    price: 39,
+    priceLabel: "$39",
+    description: "For group practices",
+    storage: "500 GB",
     videoLimit: "Unlimited videos",
     features: [
-      "Everything in Vault",
-      "Team sharing (5 members)",
+      "Everything in Professional",
+      "Team sharing (10 members)",
+      "Admin controls",
       "View analytics",
       "API access",
-      "White-label player",
-      "24/7 support",
+      "Priority support",
     ],
-    cta: "Get Fortress",
-    priceId: "price_1THl13Iv4Ez9jUN2OrVtyiox",
+    cta: "Get Practice",
+    priceId: "price_1THnbPIv4Ez9jUN2V2Vp8fUP", // $39/month Practice
   },
 ];
 
@@ -89,7 +88,8 @@ export const PricingSection = () => {
 
   const handleCheckout = async (tier: PricingTier) => {
     if (!tier.priceId) {
-      window.location.href = "/sign-up";
+      // Free tier: go to dashboard if authenticated, otherwise sign up
+      window.location.href = session ? "/dashboard" : "/sign-up";
       return;
     }
 
@@ -183,12 +183,12 @@ export const PricingSection = () => {
                       {tier.price === 0 ? "Free" : `$${tier.price}`}
                     </span>
                     {tier.price > 0 && (
-                      <span className="text-micro text-muted">one-time</span>
+                      <span className="text-micro text-muted">/month</span>
                     )}
                   </div>
                   {tier.price > 0 && (
                     <p className="text-micro text-success mt-1">
-                      Lifetime access
+                      Cancel anytime
                     </p>
                   )}
                 </div>
@@ -218,14 +218,24 @@ export const PricingSection = () => {
                 {/* CTA */}
                 <button
                   onClick={() => handleCheckout(tier)}
-                  disabled={isLoading === tier.id}
+                  disabled={isLoading === tier.id || session?.user?.plan === tier.id}
                   className={`block w-full text-center py-3 text-xs font-semibold tracking-wide transition-all ${
                     tier.popular
                       ? "bg-ochre text-background hover:bg-ochre-dark disabled:opacity-70"
                       : "border border-border text-foreground hover:border-ochre hover:bg-stone/30 disabled:opacity-70"
                   }`}
                 >
-                  {isLoading === tier.id ? "Loading..." : tier.cta}
+                  {(() => {
+                    const userPlan = session?.user?.plan;
+                    const isCurrentPlan = userPlan === tier.id;
+                    const isProf = userPlan === "professional";
+                    const isPracticeTier = tier.id === "practice";
+                    
+                    if (isLoading === tier.id) return "Loading...";
+                    if (isCurrentPlan) return "Current Plan";
+                    if (isProf && isPracticeTier) return "Upgrade";
+                    return tier.cta;
+                  })()}
                 </button>
               </div>
             </div>

@@ -5,6 +5,7 @@ import { Video } from "@/lib/schema";
 import { VideoPlayer } from "./video-player";
 import { DeleteConfirmModal } from "./delete-confirm-modal";
 import { ShareModal } from "./share-modal";
+import { ViewActivity } from "./view-activity";
 
 interface VideoGridProps {
   videos: Video[];
@@ -19,6 +20,7 @@ export function VideoGrid({ videos }: VideoGridProps) {
   const [editValue, setEditValue] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
   const [videoToShare, setVideoToShare] = useState<Video | null>(null);
+  const [videoForActivity, setVideoForActivity] = useState<Video | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = useCallback((video: Video, e: React.MouseEvent) => {
@@ -97,6 +99,11 @@ export function VideoGrid({ videos }: VideoGridProps) {
     setVideoToShare(video);
   };
 
+  const handleViewActivity = (video: Video, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setVideoForActivity(video);
+  };
+
   const handleDelete = async (video: Video, e: React.MouseEvent) => {
     e.stopPropagation();
     setVideoToDelete(video);
@@ -158,10 +165,22 @@ export function VideoGrid({ videos }: VideoGridProps) {
                   </div>
                 </div>
 
+                {/* View Activity button */}
+                <button
+                  onClick={(e) => handleViewActivity(video, e)}
+                  className="absolute top-2 right-10 p-1.5 bg-background/90 text-muted hover:text-ochre transition-colors opacity-0 group-hover:opacity-100"
+                  title="View Activity"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                  </svg>
+                </button>
+
                 {/* Share button */}
                 <button
                   onClick={(e) => handleShare(video, e)}
                   className="absolute top-2 right-2 p-1.5 bg-background/90 text-muted hover:text-ochre transition-colors opacity-0 group-hover:opacity-100"
+                  title="Share"
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.287.696.287 1.093m0-1.093l9.502-3.76a2.25 2.25 0 11.982 4.404l-9.502 3.76m0-4.404l9.502 3.76a2.25 2.25 0 01-.982 4.404l-9.502-3.76m.982 4.404a2.25 2.25 0 100-2.186m0 2.186c-.18-.324-.287-.696-.287-1.093m0 1.093l-9.502 3.76a2.25 2.25 0 11-.982-4.404l9.502-3.76m0 4.404l-9.502-3.76a2.25 2.25 0 01.982-4.404l9.502 3.76" />
@@ -232,6 +251,15 @@ export function VideoGrid({ videos }: VideoGridProps) {
           ))}
         </div>
       </div>
+
+      {/* View Activity Modal */}
+      {videoForActivity && (
+        <ViewActivity
+          videoId={videoForActivity.id}
+          isOpen={true}
+          onClose={() => setVideoForActivity(null)}
+        />
+      )}
 
       {/* Share Modal */}
       {videoToShare && (
