@@ -521,12 +521,30 @@ export async function updatePurchaseStatus(
   return updated || null;
 }
 
-export async function getUserPurchases(userId: string) {
-  return db
+export async function getPurchaseByPaymentIntent(stripePaymentIntentId: string) {
+  const [purchase] = await db
     .select()
     .from(purchases)
-    .where(eq(purchases.userId, userId))
-    .orderBy(desc(purchases.createdAt));
+    .where(eq(purchases.stripePaymentIntentId, stripePaymentIntentId))
+    .limit(1);
+
+  return purchase || null;
+}
+
+export async function updatePurchaseStatusByPaymentIntent(
+  stripePaymentIntentId: string,
+  status: "pending" | "completed" | "refunded"
+) {
+  const [updated] = await db
+    .update(purchases)
+    .set({
+      status,
+      updatedAt: new Date(),
+    })
+    .where(eq(purchases.stripePaymentIntentId, stripePaymentIntentId))
+    .returning();
+
+  return updated || null;
 }
 
 export async function getUserActivePlan(userId: string): Promise<"starter" | "professional" | "practice"> {

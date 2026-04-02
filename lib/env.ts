@@ -69,6 +69,7 @@ export const TURSO_DATABASE_URL = requireEnv("TURSO_DATABASE_URL");
 export const TURSO_AUTH_TOKEN = requireEnv("TURSO_AUTH_TOKEN");
 export const BETTER_AUTH_SECRET = requireEnv("BETTER_AUTH_SECRET");
 export const BETTER_AUTH_URL = getEnv("BETTER_AUTH_URL", "http://localhost:3000");
+export const BETTER_AUTH_TRUSTED_ORIGINS = process.env.BETTER_AUTH_TRUSTED_ORIGINS || "";
 export const STRIPE_SECRET_KEY = requireEnv("STRIPE_SECRET_KEY");
 export const STRIPE_WEBHOOK_SECRET = requireEnv("STRIPE_WEBHOOK_SECRET");
 export const LOG_LEVEL = getEnv("LOG_LEVEL", "info");
@@ -84,3 +85,7 @@ export const R2_ENDPOINT = process.env.R2_ENDPOINT || "";
 export const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID || "";
 export const R2_SECRET_ACCESS_KEY = process.env.R2_SECRET_ACCESS_KEY || "";
 export const R2_BUCKET_NAME = process.env.R2_BUCKET_NAME || "";
+
+// Email (Resend) - defaults to Resend's test domain for development
+export const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+export const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev";

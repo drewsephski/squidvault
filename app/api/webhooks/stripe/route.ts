@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { createPurchase, getPurchaseByStripeSession, updatePurchaseStatus } from "@/lib/data";
+import { createPurchase, getPurchaseByStripeSession, updatePurchaseStatus, getPurchaseByPaymentIntent, updatePurchaseStatusByPaymentIntent } from "@/lib/data";
 import { STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { checkRateLimit, getClientIP, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
@@ -144,8 +144,25 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     return;
   }
 
-  logger.info(`Charge ${charge.id} was refunded`, { paymentIntentId });
+  try {
+    // Find purchase by payment intent and mark as refunded
+    const purchase = await updatePurchaseStatusByPaymentIntent(paymentIntentId, "refunded");
 
-  // Note: In production, you'd want to track purchases by payment intent ID
-  // and update the purchase status to "refunded" here
+    if (purchase) {
+      logger.info(`Marked purchase as refunded`, {
+        chargeId: charge.id,
+        paymentIntentId,
+        purchaseId: purchase.id,
+        userId: purchase.userId,
+      });
+    } else {
+      logger.warn(`No purchase found for refunded charge`, {
+        chargeId: charge.id,
+        paymentIntentId,
+      });
+    }
+  } catch (error) {
+    logger.error("Failed to process refund", { chargeId: charge.id, paymentIntentId }, error);
+    throw error;
+  }
 }

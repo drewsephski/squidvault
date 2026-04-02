@@ -57,26 +57,6 @@ export const CtaButtons = ({ session }: CtaButtonsProps) => {
             />
           </svg>
         </Link>
-
-        <Link
-          href={session ? "/dashboard" : "/sign-in"}
-          className="group inline-flex h-12 items-center justify-center gap-2.5 border border-border bg-background/50 px-8 text-xs font-semibold tracking-wide text-foreground transition-all duration-300 hover:border-ochre/30 hover:bg-background"
-        >
-          <span>{session ? "Open Your Vault" : "Sign In"}</span>
-          <svg
-            className="h-3.5 w-3.5 text-muted transition-all duration-300 group-hover:text-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-            />
-          </svg>
-        </Link>
       </div>
     </>
   );
