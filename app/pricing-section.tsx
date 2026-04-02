@@ -218,7 +218,7 @@ export const PricingSection = () => {
                 {/* CTA */}
                 <button
                   onClick={() => handleCheckout(tier)}
-                  disabled={isLoading === tier.id || session?.user?.plan === tier.id}
+                  disabled={isLoading === tier.id || (session?.user as { plan?: string })?.plan === tier.id}
                   className={`block w-full text-center py-3 text-xs font-semibold tracking-wide transition-all ${
                     tier.popular
                       ? "bg-ochre text-background hover:bg-ochre-dark disabled:opacity-70"
@@ -226,7 +226,7 @@ export const PricingSection = () => {
                   }`}
                 >
                   {(() => {
-                    const userPlan = session?.user?.plan;
+                    const userPlan = (session?.user as { plan?: string })?.plan;
                     const isCurrentPlan = userPlan === tier.id;
                     const isProf = userPlan === "professional";
                     const isPracticeTier = tier.id === "practice";

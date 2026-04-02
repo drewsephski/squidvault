@@ -5,32 +5,38 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     // Check what tables exist
-    const tables = await db.all(sql`
+    const tables = await db.all<{ name: string }>(sql`
       SELECT name FROM sqlite_master 
       WHERE type='table' 
       ORDER BY name
     `);
 
-    const hasUserTable = tables.some((t: { name: string }) => t.name === "user");
+    const hasUserTable = tables.some((t) => t.name === "user");
 
     if (!hasUserTable) {
       return NextResponse.json({
-        tables: tables.map((t: { name: string }) => t.name),
+        tables: tables.map((t) => t.name),
         users: [],
         message: "Better Auth tables not created yet. Sign up a user first.",
       });
     }
 
     // Query users
-    const users = await db.all(sql`
+    const users = await db.all<{
+      id: string;
+      name: string;
+      email: string;
+      email_verified: boolean;
+      created_at: number;
+    }>(sql`
       SELECT id, name, email, email_verified, created_at 
       FROM user 
       ORDER BY created_at DESC
     `);
 
     return NextResponse.json({
-      tables: tables.map((t: { name: string }) => t.name),
-      users: users.map((u: Record<string, unknown>) => ({
+      tables: tables.map((t) => t.name),
+      users: users.map((u) => ({
         id: u.id,
         name: u.name,
         email: u.email,

@@ -94,9 +94,9 @@ export default async function DashboardPage() {
                       Welcome back, {user.name?.split(" ")[0]}
                     </h1>
                     <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium uppercase tracking-wide ${
-                      user.plan === "fortress" 
-                        ? "bg-ochre text-background" 
-                        : user.plan === "vault" 
+                      user.plan === "practice"
+                        ? "bg-ochre text-background"
+                        : user.plan === "professional"
                           ? "bg-ochre/20 text-ochre border border-ochre/30"
                           : "bg-stone text-muted border border-border"
                     }`}>
