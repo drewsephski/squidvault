@@ -1,30 +1,14 @@
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { ScrollReveal, StaggerContainer } from "@/components/scroll-reveal";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { Navbar } from "@/components/navbar";
+import { EncryptionDemo } from "./encryption-demo";
+import { ProcessTimeline } from "./process-timeline";
 
 const ShieldIcon = () => (
   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-  </svg>
-);
-
-const LockIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-  </svg>
-);
-
-const VideoIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
   </svg>
 );
 
@@ -119,33 +103,7 @@ export default async function Home() {
 
             <div className="lg:col-span-5">
               <ScrollReveal direction="scale" delay={200}>
-                <div className="border border-border bg-background p-5 lg:p-7 relative corner-brackets">
-                  <div className="mb-7 flex items-center justify-between">
-                    <span className="text-micro text-muted">Security Status</span>
-                    <span className="inline-flex items-center gap-2 border border-success/20 bg-success/8 px-3 py-1">
-                      <span className="h-1 w-1 rounded-full bg-success animate-[pulse-dot_2s_ease-in-out_infinite]" />
-                      <span className="text-micro text-success">Active</span>
-                    </span>
-                  </div>
-                  <div className="space-y-4">
-                    {[
-                      { label: "Encryption", value: "AES-256-GCM", subtext: "Military grade" },
-                      { label: "Key Storage", value: "Zero Knowledge", subtext: "Never leaves browser" },
-                      { label: "Server Access", value: "Encrypted Only", subtext: "Server sees nothing" },
-                    ].map((stat, idx) => (
-                      <div key={idx} className="border-b border-border/50 pb-4 last:border-0 last:pb-0">
-                        <div className="flex items-baseline justify-between mb-1.5">
-                          <span className="text-xs text-muted font-medium">{stat.label}</span>
-                          <span className="text-micro text-warm-gray">{stat.subtext}</span>
-                        </div>
-                        <div className="flex items-baseline gap-3">
-                          <span className="text-base font-semibold tracking-tight text-foreground">{stat.value}</span>
-                          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-success" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <EncryptionDemo />
               </ScrollReveal>
             </div>
           </div>
@@ -171,40 +129,7 @@ export default async function Home() {
             </div>
           </ScrollReveal>
 
-          <StaggerContainer className="grid gap-5 md:grid-cols-3" staggerDelay={120}>
-            {[
-              {
-                step: "01",
-                title: "Encrypt in Browser",
-                description: "Your video is encrypted using AES-256-GCM before leaving your device. Zero exposure.",
-                icon: <LockIcon />,
-              },
-              {
-                step: "02",
-                title: "Upload Scrambled",
-                description: "Only encrypted chunks are sent to our servers. Completely meaningless without your key.",
-                icon: <EyeOffIcon />,
-              },
-              {
-                step: "03",
-                title: "Decrypt to Watch",
-                description: "Download, decrypt in your browser, and play. We never see the original.",
-                icon: <VideoIcon />,
-              },
-            ].map((step, index) => (
-              <div key={index} className="reveal hover-lift border border-border/60 bg-background p-7 relative group">
-                <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-ochre/30 to-transparent" />
-                <div className="flex items-center justify-between mb-5">
-                  <div className="inline-flex h-9 w-9 items-center justify-center border border-ochre/20 bg-ochre/8 text-ochre">
-                    {step.icon}
-                  </div>
-                  <span className="text-micro text-ochre/40 font-semibold">{step.step}</span>
-                </div>
-                <h3 className="text-subhead text-foreground mb-2">{step.title}</h3>
-                <p className="text-body text-muted leading-relaxed">{step.description}</p>
-              </div>
-            ))}
-          </StaggerContainer>
+          <ProcessTimeline />
         </div>
       </section>
 

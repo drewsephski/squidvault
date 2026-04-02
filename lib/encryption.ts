@@ -8,7 +8,7 @@ const ITERATIONS = 100000;
 /**
  * Derive encryption key from password using PBKDF2
  */
-export async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+export async function deriveKey(password: string, salt: Uint8Array, extractable: boolean = false): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const passwordData = encoder.encode(password);
 
@@ -29,7 +29,7 @@ export async function deriveKey(password: string, salt: Uint8Array): Promise<Cry
     },
     baseKey,
     { name: ALGORITHM, length: KEY_LENGTH },
-    false,
+    extractable,
     ["encrypt", "decrypt"]
   );
 }
@@ -88,15 +88,12 @@ export async function encryptFile(
 ): Promise<{ encryptedBlob: Blob; salt: string; iv: string }> {
   const salt = generateSalt();
   const iv = generateIV();
-  console.log("Encrypting - salt:", arrayBufferToBase64(salt), "iv:", arrayBufferToBase64(iv), "salt len:", salt.length, "iv len:", iv.length);
   
   const key = await deriveKey(password, salt);
 
   const fileData = await file.arrayBuffer();
-  console.log("Original file size:", fileData.byteLength);
   
   const encryptedData = await encryptData(fileData, key, iv);
-  console.log("Encrypted data size:", encryptedData.byteLength);
 
   // Combine: salt (16 bytes) + iv (12 bytes) + encrypted data
   const combined = new Uint8Array(salt.length + iv.length + encryptedData.byteLength);
@@ -121,20 +118,12 @@ export async function decryptFile(
   saltBase64: string,
   ivBase64: string
 ): Promise<ArrayBuffer> {
-  console.log("Decrypting - salt:", saltBase64, "iv:", ivBase64, "blob size:", encryptedBlob.size);
-  
   const salt = new Uint8Array(base64ToArrayBuffer(saltBase64));
   const iv = new Uint8Array(base64ToArrayBuffer(ivBase64));
-  console.log("Decoded salt length:", salt.length, "iv length:", iv.length);
   
   const key = await deriveKey(password, salt);
   
   const encryptedData = await encryptedBlob.arrayBuffer();
-  console.log("Encrypted data size:", encryptedData.byteLength);
-  
-  // Check first few bytes to verify data integrity
-  const firstBytes = new Uint8Array(encryptedData.slice(0, 16));
-  console.log("First 16 bytes of encrypted data:", Array.from(firstBytes).map(b => b.toString(16).padStart(2, '0')).join(' '));
   
   return decryptData(encryptedData, key, iv);
 }
@@ -202,6 +191,118 @@ export function base64ToArrayBuffer(base64: string): ArrayBuffer {
     bytes[i] = binary.charCodeAt(i);
   }
   return bytes.buffer;
+}
+
+/**
+ * Generate a secure random share token (URL-safe base64)
+ * 256-bit entropy for unguessability
+ */
+export function generateShareToken(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  // URL-safe base64: replace + with -, / with _, remove = padding
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+/**
+ * Derive a Key Encryption Key (KEK) from a share password
+ * Used to wrap/unwrap the video encryption key
+ */
+export async function deriveShareKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+  const encoder = new TextEncoder();
+  const passwordData = encoder.encode(password);
+
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    passwordData,
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt.buffer as ArrayBuffer,
+      iterations: ITERATIONS,
+      hash: "SHA-256",
+    },
+    baseKey,
+    { name: ALGORITHM, length: KEY_LENGTH },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+/**
+ * Wrap a video encryption key with a share password
+ * Returns wrapped key format: salt(16) + iv(12) + ciphertext + authTag(16)
+ */
+export async function wrapKey(
+  videoKey: ArrayBuffer,
+  sharePassword: string
+): Promise<{ wrappedKey: string; salt: string }> {
+  // Generate salt for KEK derivation
+  const salt = generateSalt();
+  
+  // Derive KEK from share password
+  const kek = await deriveShareKey(sharePassword, salt);
+  
+  // Generate IV for wrapping
+  const iv = generateIV();
+  
+  // Wrap the video key with AES-GCM
+  const wrapped = await crypto.subtle.encrypt(
+    { name: ALGORITHM, iv: iv.buffer as ArrayBuffer },
+    kek,
+    videoKey
+  );
+  
+  // Combine: salt(16) + iv(12) + wrappedKey(variable)
+  const combined = new Uint8Array(salt.length + iv.length + wrapped.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.length);
+  combined.set(new Uint8Array(wrapped), salt.length + iv.length);
+  
+  return {
+    wrappedKey: arrayBufferToBase64(combined),
+    salt: arrayBufferToBase64(salt),
+  };
+}
+
+/**
+ * Unwrap a video encryption key with a share password
+ * Returns null if password is incorrect (auth tag validation fails)
+ */
+export async function unwrapKey(
+  wrappedKeyBase64: string,
+  sharePassword: string
+): Promise<ArrayBuffer | null> {
+  try {
+    const wrappedData = new Uint8Array(base64ToArrayBuffer(wrappedKeyBase64));
+    
+    // Extract components
+    const salt = wrappedData.slice(0, 16);
+    const iv = wrappedData.slice(16, 28);
+    const ciphertext = wrappedData.slice(28);
+    
+    // Derive KEK from share password
+    const kek = await deriveShareKey(sharePassword, salt);
+    
+    // Decrypt (AES-GCM includes auth tag validation)
+    const unwrapped = await crypto.subtle.decrypt(
+      { name: ALGORITHM, iv: iv.buffer as ArrayBuffer },
+      kek,
+      ciphertext
+    );
+    
+    return unwrapped;
+  } catch {
+    // Decryption failed (wrong password or tampered data)
+    return null;
+  }
 }
 
 /**
