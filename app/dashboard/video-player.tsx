@@ -17,7 +17,6 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Clean up object URL on unmount
   useEffect(() => {
     return () => {
       if (videoUrl) {
@@ -28,7 +27,7 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
 
   const handleDecrypt = async () => {
     if (!password) {
-      setError("Please enter the decryption password");
+      setError("Enter the decryption password");
       return;
     }
 
@@ -37,7 +36,6 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
     setError(null);
 
     try {
-      // Download encrypted video
       setDecryptProgress(20);
       const response = await fetch(`/api/videos/${video.id}`);
 
@@ -46,13 +44,9 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
       }
 
       setDecryptProgress(50);
-
-      // Get encrypted blob
       const encryptedBlob = await response.blob();
-
       setDecryptProgress(70);
 
-      // Decrypt the video
       const decryptedData = await decryptFile(
         encryptedBlob,
         password,
@@ -62,7 +56,6 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
 
       setDecryptProgress(90);
 
-      // Create blob URL for playback
       const decryptedBlob = new Blob([decryptedData], { type: video.mimeType });
       const url = URL.createObjectURL(decryptedBlob);
 
@@ -70,7 +63,7 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
       setDecryptProgress(100);
     } catch (err) {
       console.error("Decryption error:", err);
-      setError("Failed to decrypt video. Wrong password?");
+      setError("Wrong password? Decryption failed.");
     } finally {
       setIsDecrypting(false);
     }
@@ -78,18 +71,18 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-4xl brutal-card overflow-hidden">
+      <div className="relative w-full max-w-4xl border border-border bg-background overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-stone/30">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-stone/20">
           <div className="flex items-center gap-3">
-            <span className="text-caption text-ochre">SECURE PLAYER</span>
-            <span className="text-sm text-muted truncate max-w-xs">{video.name}</span>
+            <span className="text-micro text-ochre">Secure Player</span>
+            <span className="text-xs text-muted truncate max-w-xs">{video.name}</span>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-stone transition-colors"
+            className="p-1.5 hover:bg-stone transition-colors"
           >
-            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}>
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -98,19 +91,19 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
         {/* Content */}
         <div className="p-6">
           {!videoUrl ? (
-            <div className="text-center py-12">
-              <div className="mx-auto mb-6 inline-flex h-16 w-16 items-center justify-center rounded-full bg-ochre/10 text-ochre">
-                <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <div className="text-center py-10">
+              <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center border border-ochre/20 bg-ochre/8 text-ochre">
+                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                 </svg>
               </div>
 
-              <h3 className="text-subhead text-foreground mb-2">Enter Decryption Password</h3>
-              <p className="text-body text-muted mb-6 max-w-md mx-auto">
-                This video is encrypted. Enter the password you used when uploading to decrypt and watch.
+              <h3 className="text-subhead text-foreground mb-1.5">Enter Decryption Password</h3>
+              <p className="text-body text-muted mb-5 max-w-sm mx-auto">
+                This video is encrypted. Enter the password you used when uploading to watch.
               </p>
 
-              <div className="max-w-sm mx-auto space-y-4">
+              <div className="max-w-sm mx-auto space-y-3">
                 <input
                   type="password"
                   value={password}
@@ -122,7 +115,7 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
                 />
 
                 {error && (
-                  <div className="p-3 bg-error/10 border border-error/30 rounded-lg text-sm text-error">
+                  <div className="p-2.5 bg-error/10 border border-error/20 text-xs text-error">
                     {error}
                   </div>
                 )}
@@ -130,20 +123,19 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
                 <button
                   onClick={handleDecrypt}
                   disabled={isDecrypting}
-                  className="w-full inline-flex h-11 items-center justify-center rounded-lg bg-ochre px-6 text-sm font-medium text-white transition-colors hover:bg-ochre-dark disabled:opacity-50"
+                  className="w-full inline-flex h-10 items-center justify-center bg-ochre px-5 text-xs font-semibold text-white transition-colors hover:bg-ochre-dark disabled:opacity-50"
                 >
                   {isDecrypting ? "Decrypting..." : "Decrypt & Play"}
                 </button>
               </div>
 
-              {/* Progress */}
               {isDecrypting && (
-                <div className="mt-6 max-w-sm mx-auto">
-                  <div className="flex items-center justify-between mb-2 text-sm">
+                <div className="mt-5 max-w-sm mx-auto">
+                  <div className="flex items-center justify-between mb-1.5 text-xs">
                     <span className="text-muted">Downloading & decrypting...</span>
-                    <span className="text-foreground">{decryptProgress}%</span>
+                    <span className="text-foreground font-medium">{decryptProgress}%</span>
                   </div>
-                  <div className="h-2 bg-stone rounded-full overflow-hidden">
+                  <div className="h-1 bg-stone overflow-hidden">
                     <div
                       className="h-full bg-ochre transition-all duration-300"
                       style={{ width: `${decryptProgress}%` }}
@@ -152,7 +144,7 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
                 </div>
               )}
 
-              <p className="mt-6 text-xs text-muted">
+              <p className="mt-5 text-micro text-muted">
                 Decryption happens entirely in your browser. The password never leaves this device.
               </p>
             </div>
@@ -163,16 +155,16 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
                 src={videoUrl}
                 controls
                 autoPlay
-                className="w-full rounded-lg bg-charcoal"
+                className="w-full bg-charcoal"
                 style={{ maxHeight: "60vh" }}
               />
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-success">
-                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                <div className="flex items-center gap-2 text-xs text-success">
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                   </svg>
-                  <span>Locally decrypted and playing</span>
+                  <span>Locally decrypted</span>
                 </div>
 
                 <button
@@ -183,9 +175,9 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
                     setVideoUrl(null);
                     setPassword("");
                   }}
-                  className="text-sm text-muted hover:text-foreground transition-colors"
+                  className="text-xs text-muted hover:text-foreground transition-colors"
                 >
-                  Lock and close
+                  Lock & close
                 </button>
               </div>
             </div>

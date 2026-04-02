@@ -11,22 +11,22 @@ export function SignOutButton() {
   return (
     <button
       onClick={handleSignOut}
-      className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-medium text-muted transition-all hover:border-ochre hover:text-ochre"
+      className="inline-flex h-9 items-center justify-center gap-2 border border-border bg-background px-3 text-xs font-medium text-muted transition-all hover:border-ochre hover:text-ochre"
     >
       <svg
-        className="h-4 w-4"
+        className="h-3.5 w-3.5"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
-        strokeWidth={2}
+        strokeWidth={1.5}
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+          d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
         />
       </svg>
-      Sign out
+      <span className="hidden sm:inline">Sign out</span>
     </button>
   );
 }

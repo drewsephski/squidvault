@@ -46,42 +46,29 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-subtle relative">
-      {/* Subtle background pattern */}
+    <div className="flex min-h-screen flex-col bg-background relative">
+      {/* Subtle grid pattern */}
       <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
         <div className="h-full w-full" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 1px)`,
-          backgroundSize: '32px 32px'
+          backgroundImage: `linear-gradient(var(--foreground) 0.5px, transparent 0.5px), linear-gradient(90deg, var(--foreground) 0.5px, transparent 0.5px)`,
+          backgroundSize: '24px 24px'
         }} />
       </div>
 
-      {/* Header - Enterprise */}
-      <header className="w-full border-b border-border px-6 py-4 relative">
+      {/* Header */}
+      <header className="w-full border-b border-border px-6 py-3 relative">
         <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-foreground transition-colors group-hover:bg-ochre">
-              <svg
-                className="h-5 w-5 text-background"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="flex h-8 w-8 items-center justify-center bg-foreground transition-colors group-hover:bg-ochre">
+              <svg className="h-5 w-5 text-background" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-lg font-semibold tracking-tight">SQUIDCODER</span>
+            <span className="text-sm font-semibold tracking-tight">SQUID<span className="text-ochre">VAULT</span></span>
           </Link>
-          <p className="text-sm text-muted">
-            Already have an account?{" "}
-            <Link
-              href="/sign-in"
-              className="font-medium text-foreground transition-colors hover:text-ochre"
-            >
+          <p className="text-xs text-muted">
+            Have an account?{" "}
+            <Link href="/sign-in" className="font-medium text-foreground transition-colors hover:text-ochre">
               Sign in
             </Link>
           </p>
@@ -90,26 +77,22 @@ export default function SignUpPage() {
 
       {/* Main Content */}
       <main className="flex flex-1 items-center justify-center px-6 py-12 relative">
-        <div className="w-full max-w-md animate-fade-in-scale">
+        <div className="w-full max-w-sm animate-fade-in-scale">
           {/* Title */}
           <div className="mb-8">
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex items-center gap-2">
               <span className="h-px w-8 bg-ochre" />
-              <span className="text-caption text-ochre">Get started</span>
+              <span className="text-micro text-ochre">Get started</span>
             </div>
-            <h1 className="text-headline text-foreground">
-              Create an account
-            </h1>
-            <p className="mt-2 text-body text-muted">
-              Start building with your free account today
-            </p>
+            <h1 className="text-headline text-foreground">Create your vault</h1>
+            <p className="mt-2 text-body text-muted">Start with a free account</p>
           </div>
 
-          {/* Error - Enterprise Alert */}
+          {/* Error */}
           {error && (
-            <div className="mb-6 rounded-lg border border-error/20 bg-error/5 px-4 py-3 text-sm text-error">
+            <div className="mb-5 border border-error/20 bg-error/5 px-3 py-2.5 text-xs text-error">
               <div className="flex items-center gap-2">
-                <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3.5 w-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
                 <span>{error}</span>
@@ -117,12 +100,9 @@ export default function SignUpPage() {
             </div>
           )}
 
-          {/* Social Sign Up - Enterprise SSO Style */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={signInWithGoogle}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-all hover:border-ochre hover:bg-stone"
-            >
+          {/* Social Sign Up */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <button onClick={signInWithGoogle} className="inline-flex h-11 items-center justify-center gap-2 border border-border bg-background px-3 text-xs font-medium text-foreground transition-all hover:border-ochre hover:bg-stone">
               <svg className="h-4 w-4" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -131,10 +111,7 @@ export default function SignUpPage() {
               </svg>
               Google
             </button>
-            <button
-              onClick={signInWithGitHub}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-medium text-foreground transition-all hover:border-ochre hover:bg-stone"
-            >
+            <button onClick={signInWithGitHub} className="inline-flex h-11 items-center justify-center gap-2 border border-border bg-background px-3 text-xs font-medium text-foreground transition-all hover:border-ochre hover:bg-stone">
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
               </svg>
@@ -143,117 +120,54 @@ export default function SignUpPage() {
           </div>
 
           {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative my-5">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-background px-4 text-xs font-medium text-muted">
-                Or continue with email
-              </span>
+              <span className="bg-background px-3 text-micro text-muted">Or continue with email</span>
             </div>
           </div>
 
-          {/* Enterprise Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label
-                htmlFor="name"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Full name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="block w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted/60 transition-all focus:border-ochre focus:outline-none focus:ring-0"
-                placeholder="John Doe"
-              />
+              <label htmlFor="name" className="mb-1 block text-xs font-medium text-foreground">Full name</label>
+              <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="block w-full" placeholder="John Doe" />
             </div>
-
             <div>
-              <label
-                htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Email address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="block w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted/60 transition-all focus:border-ochre focus:outline-none focus:ring-0"
-                placeholder="name@company.com"
-              />
+              <label htmlFor="email" className="mb-1 block text-xs font-medium text-foreground">Email</label>
+              <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="block w-full" placeholder="name@company.com" />
             </div>
-
             <div>
-              <label
-                htmlFor="password"
-                className="mb-1.5 block text-sm font-medium text-foreground"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={8}
-                className="block w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted/60 transition-all focus:border-ochre focus:outline-none focus:ring-0"
-                placeholder="Create a strong password"
-              />
-              <p className="mt-1.5 text-xs text-muted">
-                Must be at least 8 characters
-              </p>
+              <label htmlFor="password" className="mb-1 block text-xs font-medium text-foreground">Password</label>
+              <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="block w-full" placeholder="Create a strong password" />
+              <p className="mt-1 text-micro text-muted">Minimum 8 characters</p>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="brutal-button-accent mt-2 w-full py-2.5 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
+            <button type="submit" disabled={loading} className="brutal-button-accent mt-3 w-full py-2.5 text-xs disabled:opacity-50 disabled:cursor-not-allowed">
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                   Creating account...
                 </span>
-              ) : (
-                "Create account"
-              )}
+              ) : "Create account"}
             </button>
           </form>
 
-          {/* Terms - Enterprise */}
-          <p className="mt-6 text-center text-xs text-muted">
+          {/* Terms */}
+          <p className="mt-5 text-center text-micro text-muted">
             By creating an account, you agree to our{" "}
-            <Link href="#" className="font-medium text-foreground transition-colors hover:text-ochre">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="#" className="font-medium text-foreground transition-colors hover:text-ochre">
-              Privacy Policy
-            </Link>
+            <Link href="#" className="font-medium text-foreground transition-colors hover:text-ochre">Terms</Link>
+            {" "}and{" "}
+            <Link href="#" className="font-medium text-foreground transition-colors hover:text-ochre">Privacy</Link>
           </p>
 
-          {/* Sign In Link */}
-          <p className="mt-6 text-center text-sm text-muted">
-            Already have an account?{" "}
-            <Link
-              href="/sign-in"
-              className="font-semibold text-foreground transition-colors hover:text-ochre underline-offset-4 hover:underline"
-            >
-              Sign in
-            </Link>
+          <p className="mt-4 text-center text-xs text-muted">
+            Have an account?{" "}
+            <Link href="/sign-in" className="font-semibold text-foreground transition-colors hover:text-ochre">Sign in</Link>
           </p>
         </div>
       </main>

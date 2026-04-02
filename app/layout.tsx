@@ -1,26 +1,23 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Space_Grotesk } from "next/font/google";
+import { Instrument_Sans, Fraunces } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-display",
+const instrumentSans = Instrument_Sans({
+  variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
 });
 
+const fraunces = Fraunces({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+  style: ["normal", "italic"],
+});
+
 export const metadata: Metadata = {
-  title: "SQUIDCODER — Enterprise Development Platform",
-  description: "The enterprise-grade platform for modern software development. Ship faster with confidence using powerful CI/CD, deployment automation, and team collaboration tools.",
+  title: "SQUIDVAULT — Encrypted Video Storage",
+  description: "Zero-knowledge encrypted video vault. Your videos. Your keys. Your privacy—guaranteed.",
 };
 
 export default function RootLayout({
@@ -31,7 +28,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
+      className={`${instrumentSans.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

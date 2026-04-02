@@ -29,20 +29,13 @@ export function VideoUpload() {
     setUploadProgress(0);
 
     try {
-      // Encrypt the video file
       setUploadProgress(10);
       const encryptedVideo = await encryptFile(file, password);
-
       setUploadProgress(30);
 
-      // Create encrypted thumbnail
       const encryptedThumb = await createEncryptedThumbnail(file, password);
-
       setUploadProgress(50);
 
-      // Prepare form data
-      // Note: The encryptedBlob from encryptFile contains: salt(16) + iv(12) + encryptedData
-      // We need to strip the salt+iv prefix since we're sending them separately
       const combinedBuffer = await encryptedVideo.encryptedBlob.arrayBuffer();
       const saltLength = 16;
       const ivLength = 12;
@@ -64,7 +57,6 @@ export function VideoUpload() {
 
       setUploadProgress(70);
 
-      // Upload to server
       const response = await fetch("/api/videos/upload", {
         method: "POST",
         body: formData,
@@ -78,11 +70,7 @@ export function VideoUpload() {
       }
 
       setUploadProgress(100);
-
-      // Clear password field for security
       setPassword("");
-
-      // Refresh the page to show the new video
       window.location.reload();
     } catch (error) {
       console.error("Upload error:", error);
@@ -111,15 +99,15 @@ export function VideoUpload() {
   };
 
   return (
-    <div className="brutal-card p-6">
+    <div className="border border-border bg-background p-5">
       <div className="flex items-center gap-2 mb-4">
-        <span className="h-px w-4 bg-ochre" />
-        <h3 className="text-caption text-foreground">Upload Video</h3>
+        <span className="h-px w-3 bg-ochre" />
+        <h3 className="text-micro text-foreground">Upload Video</h3>
       </div>
 
       {/* Password Input */}
       <div className="mb-4">
-        <label className="block text-sm font-medium text-foreground mb-2">
+        <label className="block text-xs font-medium text-foreground mb-1.5">
           Encryption Password
         </label>
         <input
@@ -130,8 +118,8 @@ export function VideoUpload() {
           className="w-full"
           disabled={isUploading}
         />
-        <p className="mt-1 text-xs text-muted">
-          This password encrypts your video. Never lose it - we cannot recover it!
+        <p className="mt-1 text-micro text-muted">
+          Never lose it — we cannot recover it.
         </p>
       </div>
 
@@ -142,8 +130,8 @@ export function VideoUpload() {
         onDragOver={handleDrag}
         onDrop={handleDrop}
         className={`
-          relative border-2 border-dashed rounded-xl p-8 text-center transition-all
-          ${dragActive ? "border-ochre bg-ochre/5" : "border-border hover:border-ochre/50"}
+          relative border border-dashed p-6 text-center transition-all
+          ${dragActive ? "border-ochre bg-ochre/5" : "border-border hover:border-ochre/40"}
           ${isUploading ? "opacity-50 pointer-events-none" : ""}
         `}
       >
@@ -156,15 +144,15 @@ export function VideoUpload() {
           disabled={isUploading}
         />
         <label htmlFor="video-upload" className="cursor-pointer block">
-          <div className="mx-auto mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-ochre/10 text-ochre">
-            <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center border border-ochre/20 bg-ochre/8 text-ochre">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-foreground mb-1">
-            Drop your video here or click to browse
+          <p className="text-xs font-medium text-foreground mb-0.5">
+            Drop video or click to browse
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-micro text-muted">
             MP4, WebM, MOV up to 500MB
           </p>
         </label>
@@ -173,11 +161,11 @@ export function VideoUpload() {
       {/* Progress */}
       {isUploading && (
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-muted">Encrypting & uploading...</span>
-            <span className="text-sm font-medium text-foreground">{uploadProgress}%</span>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-muted">Encrypting & uploading...</span>
+            <span className="text-xs font-semibold text-foreground">{uploadProgress}%</span>
           </div>
-          <div className="h-2 bg-stone rounded-full overflow-hidden">
+          <div className="h-1 bg-stone overflow-hidden">
             <div
               className="h-full bg-ochre transition-all duration-300"
               style={{ width: `${uploadProgress}%` }}
@@ -187,19 +175,17 @@ export function VideoUpload() {
       )}
 
       {/* Security Note */}
-      <div className="mt-6 p-4 bg-success/5 border border-success/20 rounded-lg">
-        <div className="flex items-start gap-3">
-          <div className="mt-0.5 text-success">
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-medium text-success">Client-Side Encrypted</p>
-            <p className="text-xs text-muted mt-1">
-              Your video is encrypted in your browser before upload. We never see the original file.
-            </p>
-          </div>
+      <div className="mt-4 flex items-start gap-2.5 p-3 border border-success/15 bg-success/5">
+        <div className="mt-0.5 text-success flex-shrink-0">
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+        </div>
+        <div>
+          <p className="text-xs font-medium text-success">Client-Side Encrypted</p>
+          <p className="text-micro text-muted mt-0.5">
+            Encrypted in your browser before upload.
+          </p>
         </div>
       </div>
     </div>
