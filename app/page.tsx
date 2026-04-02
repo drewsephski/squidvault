@@ -5,6 +5,7 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { Navbar } from "@/components/navbar";
 import { EncryptionDemo } from "./encryption-demo";
 import { ProcessTimeline } from "./process-timeline";
+import { PricingSection } from "./pricing-section";
 
 const ShieldIcon = () => (
   <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.5}>
@@ -193,6 +194,9 @@ export default async function Home() {
         
         {/* Bottom fade to stone */}
       </section>
+
+      {/* Pricing Section */}
+      <PricingSection />
 
       {/* CTA Section */}
       <section className="border-t border-border px-6 py-24 lg:py-32 bg-stone/50 relative overflow-hidden">

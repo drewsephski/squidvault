@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { projects, deployments, activityLogs, apiMetrics, videos, videoAccessLogs, videoShares, type NewProject, type NewDeployment, type NewActivityLog, type NewVideo, type NewVideoAccessLog, type NewVideoShare } from "./schema";
+import { projects, deployments, activityLogs, apiMetrics, videos, videoAccessLogs, videoShares, purchases, type NewProject, type NewDeployment, type NewActivityLog, type NewVideo, type NewVideoAccessLog, type NewVideoShare, type NewPurchase } from "./schema";
 import { eq, and, desc, sql, gte, lt } from "drizzle-orm";
 import { generateId } from "./utils";
 
@@ -425,4 +425,80 @@ export async function deleteVideoShare(token: string, userId: string) {
     .returning();
 
   return deleted || null;
+}
+
+// Purchases
+
+export async function createPurchase(data: Omit<NewPurchase, "id" | "createdAt" | "updatedAt">) {
+  const id = generateId();
+  const now = new Date();
+
+  const [purchase] = await db
+    .insert(purchases)
+    .values({
+      ...data,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  return purchase;
+}
+
+export async function getPurchaseByStripeSession(stripeSessionId: string) {
+  const [purchase] = await db
+    .select()
+    .from(purchases)
+    .where(eq(purchases.stripeSessionId, stripeSessionId))
+    .limit(1);
+
+  return purchase || null;
+}
+
+export async function updatePurchaseStatus(
+  id: string,
+  status: "pending" | "completed" | "refunded",
+  stripePaymentIntentId?: string
+) {
+  const updateData: { status: string; updatedAt: Date; stripePaymentIntentId?: string } = {
+    status,
+    updatedAt: new Date(),
+  };
+
+  if (stripePaymentIntentId) {
+    updateData.stripePaymentIntentId = stripePaymentIntentId;
+  }
+
+  const [updated] = await db
+    .update(purchases)
+    .set(updateData)
+    .where(eq(purchases.id, id))
+    .returning();
+
+  return updated || null;
+}
+
+export async function getUserPurchases(userId: string) {
+  return db
+    .select()
+    .from(purchases)
+    .where(eq(purchases.userId, userId))
+    .orderBy(desc(purchases.createdAt));
+}
+
+export async function getUserActivePlan(userId: string): Promise<"starter" | "vault" | "fortress"> {
+  const [latestPurchase] = await db
+    .select({ tierId: purchases.tierId })
+    .from(purchases)
+    .where(and(eq(purchases.userId, userId), eq(purchases.status, "completed")))
+    .orderBy(desc(purchases.createdAt))
+    .limit(1);
+
+  if (!latestPurchase) return "starter";
+
+  const tier = latestPurchase.tierId;
+  if (tier === "fortress") return "fortress";
+  if (tier === "vault") return "vault";
+  return "starter";
 }

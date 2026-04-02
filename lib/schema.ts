@@ -138,11 +138,33 @@ export const videoShares = sqliteTable("video_shares", {
   isRevokedIdx: index("video_shares_is_revoked_idx").on(table.isRevoked),
 }));
 
+// User purchases for tracking one-time payments
+export const purchases = sqliteTable("purchases", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  stripeSessionId: text("stripe_session_id").notNull().unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  tierId: text("tier_id").notNull(), // starter, vault, fortress
+  amount: integer("amount").notNull(), // in cents
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull().default("pending"), // pending, completed, refunded
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+  userIdIdx: index("purchases_user_id_idx").on(table.userId),
+  stripeSessionIdx: index("purchases_stripe_session_idx").on(table.stripeSessionId),
+  statusIdx: index("purchases_status_idx").on(table.status),
+}));
+
 export const videoSharesRelations = relations(videoShares, ({ one }) => ({
   video: one(videos, {
     fields: [videoShares.videoId],
     references: [videos.id],
   }),
+}));
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  // No explicit relation since users table is managed by Better Auth
 }));
 
 export type Project = typeof projects.$inferSelect;
@@ -159,3 +181,5 @@ export type VideoAccessLog = typeof videoAccessLogs.$inferSelect;
 export type NewVideoAccessLog = typeof videoAccessLogs.$inferInsert;
 export type VideoShare = typeof videoShares.$inferSelect;
 export type NewVideoShare = typeof videoShares.$inferInsert;
+export type Purchase = typeof purchases.$inferSelect;
+export type NewPurchase = typeof purchases.$inferInsert;

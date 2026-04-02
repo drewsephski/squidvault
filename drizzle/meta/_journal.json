@@ -8,6 +8,20 @@
       "when": 1775099984222,
       "tag": "0000_stormy_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775136028222,
+      "tag": "0001_add_purchases_table",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775136500000,
+      "tag": "0002_purchases_only",
+      "breakpoints": true
     }
   ]
 }

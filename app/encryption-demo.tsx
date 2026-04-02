@@ -94,7 +94,7 @@ export const EncryptionDemo = () => {
         <div className="mb-6 pb-5 border-b border-border/50">
           <div className="flex items-baseline gap-4 mb-1">
             <span className="text-body text-foreground font-medium">
-              family_vacation_2024.mp4
+              family_vacation_2026.mp4
             </span>
             <span className="text-micro text-muted">847.3 MB</span>
           </div>
