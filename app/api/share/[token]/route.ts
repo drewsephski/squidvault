@@ -1,6 +1,6 @@
-import { getShareWithVideo, incrementShareView } from "@/lib/data";
-import { getVideoSignedUrl } from "@/lib/storage";
+import { getShareWithVideo } from "@/lib/data";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIP, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 
 // Validate share and return video metadata
 export async function GET(
@@ -8,6 +8,13 @@ export async function GET(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Apply rate limiting for public share access
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`share-access:${clientIP}`, RATE_LIMITS.general);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     const { token } = await params;
     console.log("[DEBUG] Looking up share with token:", token, "length:", token.length);
 
@@ -81,6 +88,13 @@ export async function DELETE(
   { params }: { params: Promise<{ token: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`share:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     const { auth } = await import("@/lib/auth");
     const { revokeVideoShare } = await import("@/lib/data");
 

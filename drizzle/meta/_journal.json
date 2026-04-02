@@ -29,6 +29,13 @@
       "when": 1775220000000,
       "tag": "0003_share_view_events",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1775165898430,
+      "tag": "0004_add_auth_tables",
+      "breakpoints": true
     }
   ]
 }

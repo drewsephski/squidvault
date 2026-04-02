@@ -2,12 +2,20 @@ import { auth } from "@/lib/auth";
 import { getVideoById, incrementVideoView, logVideoAccess, updateVideoName, deleteVideo as deleteVideoDb } from "@/lib/data";
 import { getVideoSignedUrl, deleteVideo } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIP, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`video:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
@@ -63,6 +71,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`video:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
@@ -101,6 +116,13 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`video:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {

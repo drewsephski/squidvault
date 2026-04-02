@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { getVideoById, createVideoShare } from "@/lib/data";
 import { generateShareToken } from "@/lib/encryption";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIP, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 
 // Create a share for a video
 export async function POST(
@@ -9,6 +10,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`share:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
@@ -25,7 +33,7 @@ export async function POST(
 
     // Parse request body
     const body = await request.json();
-    const { wrappedKey, salt, expiresIn, maxViews, passwordHint } = body;
+    const { wrappedKey, salt, expiresIn, maxViews } = body;
 
     // Validate required fields
     if (!wrappedKey || typeof wrappedKey !== "string") {
@@ -107,6 +115,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`share:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {

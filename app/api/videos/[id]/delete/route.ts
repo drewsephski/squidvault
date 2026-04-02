@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { deleteVideo } from "@/lib/data";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIP, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 import { unlink } from "fs/promises";
 import { existsSync } from "fs";
 
@@ -9,6 +10,13 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`video:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {

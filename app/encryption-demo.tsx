@@ -13,6 +13,7 @@ export const EncryptionDemo = () => {
   }, []);
 
   const step = progress < 20 ? 0 : progress < 35 ? 1 : progress < 90 ? 2 : 3;
+  const chunkKey = Math.floor(progress / 20);
 
   const chunks = useMemo(() => {
     return Array.from({ length: 6 }, () =>
@@ -20,7 +21,7 @@ export const EncryptionDemo = () => {
         Math.random().toString(16).substring(2, 4).toUpperCase()
       ).join(" ")
     );
-  }, [Math.floor(progress / 20)]);
+  }, [chunkKey]);
 
   const steps = [
     { label: "SCAN", color: "oklch(72% 0.18 75)" },
@@ -94,7 +95,7 @@ export const EncryptionDemo = () => {
         <div className="mb-6 pb-5 border-b border-border/50">
           <div className="flex items-baseline gap-4 mb-1">
             <span className="text-body text-foreground font-medium">
-              family_vacation_2026.mp4
+              secret_video_2026.mp4
             </span>
             <span className="text-micro text-muted">847.3 MB</span>
           </div>

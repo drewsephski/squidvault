@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { createVideo, canUserUploadVideo } from "@/lib/data";
 import { uploadVideo, generateStorageKey } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIP, RATE_LIMITS, rateLimitResponse } from "@/lib/rate-limit";
 import crypto from "crypto";
 
 // Config to allow large file uploads
@@ -10,6 +11,13 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   try {
+    // Apply rate limiting
+    const clientIP = getClientIP(request.headers);
+    const rateLimit = checkRateLimit(`upload:${clientIP}`, RATE_LIMITS.api);
+    if (!rateLimit.success) {
+      return rateLimitResponse(rateLimit);
+    }
+
     // Check authentication
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
