@@ -1,24 +1,12 @@
 import { auth } from "@/lib/auth";
 import { createVideo } from "@/lib/data";
+import { uploadVideo, generateStorageKey } from "@/lib/storage";
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import { join } from "path";
 import crypto from "crypto";
 
 // Config to allow large file uploads
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-
-// Upload directory for encrypted videos
-const UPLOAD_DIR = join(process.cwd(), "uploads", "videos");
-
-// Ensure upload directory exists
-async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,8 +15,6 @@ export async function POST(request: NextRequest) {
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
-    await ensureUploadDir();
 
     // Parse multipart form data
     const formData = await request.formData();
@@ -64,35 +50,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique storage path
+    // Generate unique video ID and storage keys
     const videoId = crypto.randomUUID();
-    const storagePath = join(UPLOAD_DIR, `${videoId}.enc`);
+    const fileName = `${videoId}.enc`;
+    const storageKey = generateStorageKey(session.user.id, videoId, fileName);
 
-    // Write encrypted file to disk
-    const fileBuffer = await file.arrayBuffer();
-    await writeFile(storagePath, new Uint8Array(fileBuffer));
+    // Upload encrypted file to object storage
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    await uploadVideo(storageKey, fileBuffer, "application/octet-stream");
 
-    // Save thumbnail if provided
-    let thumbnailPath: string | undefined;
+    // Upload thumbnail if provided
+    let thumbnailKey: string | undefined;
     const thumbnailFile = formData.get("thumbnail") as File;
     if (thumbnailFile && thumbnailSalt && thumbnailIv) {
       const thumbnailId = crypto.randomUUID();
-      thumbnailPath = join(UPLOAD_DIR, `thumb_${thumbnailId}.enc`);
-      const thumbBuffer = await thumbnailFile.arrayBuffer();
-      await writeFile(thumbnailPath, new Uint8Array(thumbBuffer));
+      const thumbFileName = `thumb_${thumbnailId}.enc`;
+      thumbnailKey = generateStorageKey(session.user.id, videoId, thumbFileName);
+      const thumbBuffer = Buffer.from(await thumbnailFile.arrayBuffer());
+      await uploadVideo(thumbnailKey, thumbBuffer, "application/octet-stream");
     }
 
-    // Create database record
+    // Create database record with storage keys
     const video = await createVideo({
       userId: session.user.id,
       name: name || file.name,
       description: description || undefined,
-      storagePath,
+      storagePath: storageKey,
       originalSize: file.size,
       mimeType: file.type,
       encryptionSalt,
       encryptionIv,
-      thumbnailPath,
+      thumbnailPath: thumbnailKey,
     });
 
     return NextResponse.json({

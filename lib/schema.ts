@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 export const projects = sqliteTable("projects", {
@@ -9,7 +9,9 @@ export const projects = sqliteTable("projects", {
   status: text("status").notNull().default("active"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
+}, (table) => ({
+  userIdIdx: index("projects_user_id_idx").on(table.userId),
+}));
 
 export const deployments = sqliteTable("deployments", {
   id: text("id").primaryKey(),
@@ -18,7 +20,10 @@ export const deployments = sqliteTable("deployments", {
   status: text("status").notNull(), // success, error, pending
   url: text("url"),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
+}, (table) => ({
+  projectIdIdx: index("deployments_project_id_idx").on(table.projectId),
+  userIdIdx: index("deployments_user_id_idx").on(table.userId),
+}));
 
 export const activityLogs = sqliteTable("activity_logs", {
   id: text("id").primaryKey(),
@@ -29,7 +34,10 @@ export const activityLogs = sqliteTable("activity_logs", {
   status: text("status").notNull().default("success"), // success, error
   metadata: text("metadata"), // JSON string
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
+}, (table) => ({
+  userIdIdx: index("activity_logs_user_id_idx").on(table.userId),
+  createdAtIdx: index("activity_logs_created_at_idx").on(table.createdAt),
+}));
 
 export const apiMetrics = sqliteTable("api_metrics", {
   id: text("id").primaryKey(),
@@ -63,7 +71,10 @@ export const videos = sqliteTable("videos", {
   // Timestamps
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
+}, (table) => ({
+  userIdIdx: index("videos_user_id_idx").on(table.userId),
+  storagePathIdx: index("videos_storage_path_idx").on(table.storagePath),
+}));
 
 // Video access logs for audit trail
 export const videoAccessLogs = sqliteTable("video_access_logs", {
@@ -74,7 +85,10 @@ export const videoAccessLogs = sqliteTable("video_access_logs", {
   userAgent: text("user_agent"),
   action: text("action").notNull(), // view, download, failed_access
   createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
-});
+}, (table) => ({
+  videoIdIdx: index("video_access_logs_video_id_idx").on(table.videoId),
+  userIdIdx: index("video_access_logs_user_id_idx").on(table.userId),
+}));
 
 export const projectsRelations = relations(projects, ({ many }) => ({
   deployments: many(deployments),
@@ -99,6 +113,60 @@ export const videoAccessLogsRelations = relations(videoAccessLogs, ({ one }) => 
   }),
 }));
 
+// Video shares for secure sharing with password protection
+export const videoShares = sqliteTable("video_shares", {
+  id: text("id").primaryKey(), // URL-safe token
+  videoId: text("video_id").notNull(),
+  createdBy: text("created_by").notNull(),
+  
+  // Encrypted key material (client-side encrypted with share password)
+  wrappedKey: text("wrapped_key").notNull(), // video data key encrypted with share password
+  salt: text("salt").notNull(), // for KEK derivation
+  
+  // Access control
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  maxViews: integer("max_views"),
+  viewCount: integer("view_count").notNull().default(0),
+  isRevoked: integer("is_revoked", { mode: "boolean" }).notNull().default(false),
+  
+  // Timestamps
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  lastAccessedAt: integer("last_accessed_at", { mode: "timestamp" }),
+}, (table) => ({
+  videoIdIdx: index("video_shares_video_id_idx").on(table.videoId),
+  expiresAtIdx: index("video_shares_expires_at_idx").on(table.expiresAt),
+  isRevokedIdx: index("video_shares_is_revoked_idx").on(table.isRevoked),
+}));
+
+// User purchases for tracking one-time payments
+export const purchases = sqliteTable("purchases", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  stripeSessionId: text("stripe_session_id").notNull().unique(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  tierId: text("tier_id").notNull(), // starter, vault, fortress
+  amount: integer("amount").notNull(), // in cents
+  currency: text("currency").notNull().default("usd"),
+  status: text("status").notNull().default("pending"), // pending, completed, refunded
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().$defaultFn(() => new Date()),
+}, (table) => ({
+  userIdIdx: index("purchases_user_id_idx").on(table.userId),
+  stripeSessionIdx: index("purchases_stripe_session_idx").on(table.stripeSessionId),
+  statusIdx: index("purchases_status_idx").on(table.status),
+}));
+
+export const videoSharesRelations = relations(videoShares, ({ one }) => ({
+  video: one(videos, {
+    fields: [videoShares.videoId],
+    references: [videos.id],
+  }),
+}));
+
+export const purchasesRelations = relations(purchases, ({ one }) => ({
+  // No explicit relation since users table is managed by Better Auth
+}));
+
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
 export type Deployment = typeof deployments.$inferSelect;
@@ -111,3 +179,7 @@ export type Video = typeof videos.$inferSelect;
 export type NewVideo = typeof videos.$inferInsert;
 export type VideoAccessLog = typeof videoAccessLogs.$inferSelect;
 export type NewVideoAccessLog = typeof videoAccessLogs.$inferInsert;
+export type VideoShare = typeof videoShares.$inferSelect;
+export type NewVideoShare = typeof videoShares.$inferInsert;
+export type Purchase = typeof purchases.$inferSelect;
+export type NewPurchase = typeof purchases.$inferInsert;

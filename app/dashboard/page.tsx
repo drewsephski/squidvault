@@ -83,10 +83,21 @@ export default async function DashboardPage() {
               </div>
               <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
                 <div>
-                  <h1 className="text-headline text-foreground">
-                    Welcome back, {user.name?.split(" ")[0]}
-                  </h1>
-                  <p className="mt-2 text-body text-muted">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-headline text-foreground">
+                      Welcome back, {user.name?.split(" ")[0]}
+                    </h1>
+                    <span className={`inline-flex items-center px-2 py-0.5 text-xs font-medium uppercase tracking-wide ${
+                      user.plan === "fortress" 
+                        ? "bg-ochre text-background" 
+                        : user.plan === "vault" 
+                          ? "bg-ochre/20 text-ochre border border-ochre/30"
+                          : "bg-stone text-muted border border-border"
+                    }`}>
+                      {user.plan}
+                    </span>
+                  </div>
+                  <p className="text-body text-muted">
                     Your videos are encrypted and safe. Only you hold the keys.
                   </p>
                 </div>

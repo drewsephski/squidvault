@@ -1,6 +1,6 @@
 import { db } from "./db";
-import { projects, deployments, activityLogs, apiMetrics, videos, videoAccessLogs, type NewProject, type NewDeployment, type NewActivityLog, type NewVideo, type NewVideoAccessLog } from "./schema";
-import { eq, and, desc, sql, gte } from "drizzle-orm";
+import { projects, deployments, activityLogs, apiMetrics, videos, videoAccessLogs, videoShares, purchases, type NewProject, type NewDeployment, type NewActivityLog, type NewVideo, type NewVideoAccessLog, type NewVideoShare, type NewPurchase } from "./schema";
+import { eq, and, desc, sql, gte, lt } from "drizzle-orm";
 import { generateId } from "./utils";
 
 // Stats
@@ -242,6 +242,26 @@ export async function deleteVideo(videoId: string, userId: string) {
   return deleted;
 }
 
+export async function updateVideoName(videoId: string, userId: string, name: string) {
+  const [updated] = await db
+    .update(videos)
+    .set({ name, updatedAt: new Date() })
+    .where(and(eq(videos.id, videoId), eq(videos.userId, userId)))
+    .returning();
+
+  if (updated) {
+    await createActivityLog({
+      userId,
+      action: "Renamed",
+      target: name,
+      targetType: "video",
+      status: "success",
+    });
+  }
+
+  return updated;
+}
+
 export async function logVideoAccess(data: Omit<NewVideoAccessLog, "id" | "createdAt">) {
   const id = generateId();
   const now = new Date();
@@ -264,4 +284,221 @@ export async function getVideoAccessLogs(videoId: string, userId: string, limit 
     .where(eq(videoAccessLogs.videoId, videoId))
     .orderBy(desc(videoAccessLogs.createdAt))
     .limit(limit);
+}
+
+// Video Shares
+
+export async function createVideoShare(data: Omit<NewVideoShare, "createdAt" | "viewCount" | "isRevoked">) {
+  const now = new Date();
+
+  const [share] = await db
+    .insert(videoShares)
+    .values({
+      ...data,
+      viewCount: 0,
+      isRevoked: false,
+      createdAt: now,
+    })
+    .returning();
+
+  return share;
+}
+
+export async function getVideoShares(videoId: string, userId: string) {
+  // Verify ownership
+  const video = await getVideoById(videoId, userId);
+  if (!video) return [];
+
+  return db
+    .select()
+    .from(videoShares)
+    .where(eq(videoShares.videoId, videoId))
+    .orderBy(desc(videoShares.createdAt));
+}
+
+export async function getShareByToken(token: string) {
+  const [share] = await db
+    .select({
+      id: videoShares.id,
+      videoId: videoShares.videoId,
+      createdBy: videoShares.createdBy,
+      wrappedKey: videoShares.wrappedKey,
+      salt: videoShares.salt,
+      expiresAt: videoShares.expiresAt,
+      maxViews: videoShares.maxViews,
+      viewCount: videoShares.viewCount,
+      isRevoked: videoShares.isRevoked,
+      createdAt: videoShares.createdAt,
+      lastAccessedAt: videoShares.lastAccessedAt,
+    })
+    .from(videoShares)
+    .where(eq(videoShares.id, token))
+    .limit(1);
+
+  return share || null;
+}
+
+export async function getShareWithVideo(token: string) {
+  const result = await db
+    .select({
+      share: {
+        id: videoShares.id,
+        videoId: videoShares.videoId,
+        createdBy: videoShares.createdBy,
+        wrappedKey: videoShares.wrappedKey,
+        salt: videoShares.salt,
+        expiresAt: videoShares.expiresAt,
+        maxViews: videoShares.maxViews,
+        viewCount: videoShares.viewCount,
+        isRevoked: videoShares.isRevoked,
+        createdAt: videoShares.createdAt,
+        lastAccessedAt: videoShares.lastAccessedAt,
+      },
+      video: {
+        id: videos.id,
+        name: videos.name,
+        description: videos.description,
+        storagePath: videos.storagePath,
+        originalSize: videos.originalSize,
+        mimeType: videos.mimeType,
+        encryptionSalt: videos.encryptionSalt,
+        encryptionIv: videos.encryptionIv,
+        thumbnailPath: videos.thumbnailPath,
+      },
+    })
+    .from(videoShares)
+    .innerJoin(videos, eq(videoShares.videoId, videos.id))
+    .where(eq(videoShares.id, token))
+    .limit(1);
+
+  return result[0] || null;
+}
+
+export async function incrementShareView(token: string, maxViews: number | null): Promise<boolean> {
+  // Atomic increment with max views check
+  if (maxViews !== null) {
+    const result = await db
+      .update(videoShares)
+      .set({
+        viewCount: sql`${videoShares.viewCount} + 1`,
+        lastAccessedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(videoShares.id, token),
+          lt(videoShares.viewCount, maxViews),
+          eq(videoShares.isRevoked, false),
+          sql`${videoShares.expiresAt} IS NULL OR ${videoShares.expiresAt} > datetime('now')`
+        )
+      )
+      .returning({ viewCount: videoShares.viewCount });
+
+    return result.length > 0;
+  } else {
+    // No max views limit, just increment
+    await db
+      .update(videoShares)
+      .set({
+        viewCount: sql`${videoShares.viewCount} + 1`,
+        lastAccessedAt: new Date(),
+      })
+      .where(eq(videoShares.id, token));
+
+    return true;
+  }
+}
+
+export async function revokeVideoShare(token: string, userId: string) {
+  const [updated] = await db
+    .update(videoShares)
+    .set({ isRevoked: true })
+    .where(and(eq(videoShares.id, token), eq(videoShares.createdBy, userId)))
+    .returning();
+
+  return updated || null;
+}
+
+export async function deleteVideoShare(token: string, userId: string) {
+  const [deleted] = await db
+    .delete(videoShares)
+    .where(and(eq(videoShares.id, token), eq(videoShares.createdBy, userId)))
+    .returning();
+
+  return deleted || null;
+}
+
+// Purchases
+
+export async function createPurchase(data: Omit<NewPurchase, "id" | "createdAt" | "updatedAt">) {
+  const id = generateId();
+  const now = new Date();
+
+  const [purchase] = await db
+    .insert(purchases)
+    .values({
+      ...data,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .returning();
+
+  return purchase;
+}
+
+export async function getPurchaseByStripeSession(stripeSessionId: string) {
+  const [purchase] = await db
+    .select()
+    .from(purchases)
+    .where(eq(purchases.stripeSessionId, stripeSessionId))
+    .limit(1);
+
+  return purchase || null;
+}
+
+export async function updatePurchaseStatus(
+  id: string,
+  status: "pending" | "completed" | "refunded",
+  stripePaymentIntentId?: string
+) {
+  const updateData: { status: string; updatedAt: Date; stripePaymentIntentId?: string } = {
+    status,
+    updatedAt: new Date(),
+  };
+
+  if (stripePaymentIntentId) {
+    updateData.stripePaymentIntentId = stripePaymentIntentId;
+  }
+
+  const [updated] = await db
+    .update(purchases)
+    .set(updateData)
+    .where(eq(purchases.id, id))
+    .returning();
+
+  return updated || null;
+}
+
+export async function getUserPurchases(userId: string) {
+  return db
+    .select()
+    .from(purchases)
+    .where(eq(purchases.userId, userId))
+    .orderBy(desc(purchases.createdAt));
+}
+
+export async function getUserActivePlan(userId: string): Promise<"starter" | "vault" | "fortress"> {
+  const [latestPurchase] = await db
+    .select({ tierId: purchases.tierId })
+    .from(purchases)
+    .where(and(eq(purchases.userId, userId), eq(purchases.status, "completed")))
+    .orderBy(desc(purchases.createdAt))
+    .limit(1);
+
+  if (!latestPurchase) return "starter";
+
+  const tier = latestPurchase.tierId;
+  if (tier === "fortress") return "fortress";
+  if (tier === "vault") return "vault";
+  return "starter";
 }

@@ -37,21 +37,37 @@ export function VideoPlayer({ video, onClose }: VideoPlayerProps) {
 
     try {
       setDecryptProgress(20);
+      
+      // Get signed URL from API
       const response = await fetch(`/api/videos/${video.id}`);
-
       if (!response.ok) {
-        throw new Error("Failed to download video");
+        throw new Error("Failed to get video URL");
       }
-
-      setDecryptProgress(50);
-      const encryptedBlob = await response.blob();
-      setDecryptProgress(70);
+      
+      const { url: signedUrl, video: videoMeta } = await response.json();
+      setDecryptProgress(40);
+      
+      // Fetch encrypted file from signed URL
+      let fileResponse;
+      try {
+        fileResponse = await fetch(signedUrl);
+      } catch (fetchErr) {
+        console.error("Fetch error:", fetchErr);
+        throw new Error(`Network error: ${fetchErr instanceof Error ? fetchErr.message : 'Failed to fetch'}`);
+      }
+      if (!fileResponse.ok) {
+        throw new Error("Failed to download encrypted video");
+      }
+      
+      setDecryptProgress(60);
+      const encryptedBlob = await fileResponse.blob();
+      setDecryptProgress(80);
 
       const decryptedData = await decryptFile(
         encryptedBlob,
         password,
-        video.encryptionSalt,
-        video.encryptionIv
+        videoMeta.encryptionSalt,
+        videoMeta.encryptionIv
       );
 
       setDecryptProgress(90);

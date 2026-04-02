@@ -66,6 +66,12 @@ export async function Navbar({ currentPath = "/" }: NavbarProps) {
             // Not authenticated: show auth links
             <>
               <Link
+                href="/#pricing"
+                className="hidden px-4 py-2 text-xs font-medium text-muted transition-colors hover:text-foreground sm:block"
+              >
+                Pricing
+              </Link>
+              <Link
                 href="/sign-in"
                 className="hidden px-4 py-2 text-xs font-medium text-muted transition-colors hover:text-foreground sm:block"
               >
